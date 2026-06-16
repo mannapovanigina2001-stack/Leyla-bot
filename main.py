@@ -3,10 +3,19 @@ from datetime import datetime
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 
-API_ID         = int(os.environ.get("LEYLA_API_ID", 0))
-API_HASH       = os.environ.get("LEYLA_API_HASH", "")
-SESSION_STRING = os.environ.get("LEYLA_SESSION_STRING", "")
-GROQ_KEY       = os.environ.get("LEYLA_GROQ_KEY", os.environ.get("GROQ_KEY_1", ""))
+API_ID         = int(os.environ.get("API_ID", 0))
+API_HASH       = os.environ.get("API_HASH", "")
+SESSION_STRING = os.environ.get("SESSION_STRING", "")
+
+GROQ_KEYS = [
+    k for k in [
+        os.environ.get("GROQ_KEY_1"),
+        os.environ.get("GROQ_KEY_2"),
+        os.environ.get("GROQ_KEY_3"),
+        os.environ.get("GROQ_KEY_4"),
+        os.environ.get("GROQ_KEY_5"),
+    ] if k
+]
 
 BOT_LINK = "https://t.me/impulsevbot?start=ref_e3b1ec14"
 
@@ -47,19 +56,18 @@ Hech qachon ieroqliflar, arabcha, xitoycha harflar yozmang. Faqat lotin yoki kir
 
 conversations: dict = {}
 
+
 def clean_reply(text: str) -> str:
-    # Иероглифы и арабские символы — убираем
     text = re.sub(r'[\u0600-\u06FF\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF\u0900-\u097F]+', '', text)
-    # Лишние пробелы
     text = re.sub(r'\s{2,}', ' ', text).strip()
-    # Берём только первые 2 предложения
     parts = re.split(r'(?<=[.!?])\s+', text)
     return ' '.join(parts[:2]).strip()
+
 
 def get_ai_reply(messages: list, text: str) -> str:
     try:
         from groq import Groq
-        groq = Groq(api_key=GROQ_KEY)
+        groq = Groq(api_key=random.choice(GROQ_KEYS))
         r = groq.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "system", "content": SYSTEM_PROMPT}] + messages,
@@ -76,9 +84,7 @@ def get_ai_reply(messages: list, text: str) -> str:
 def fallback(text: str) -> str:
     t = text.lower()
 
-    # Определяем язык
     is_uz = any(w in t for w in ["salom", "qanday", "tanish", "yaxshi", "nima", "qiz", "uka", "aka"])
-    is_ru = any(w in t for w in ["привет", "как", "дела", "познако", "привет", "хай", "пиши"])
 
     bot_q = any(w in t for w in ["ты бот", "sen bot", "are you bot", "ты ии", "chatgpt", "ты живая"])
     rude  = any(w in t for w in ["тупая", "дура", "заткнись", "idiot", "stupid", "bosh", "tentak"])
